@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    namespace:mapper文件的命名空间,唯一,用于区分mapper的xml文件
+    Mybatis使用DAO代理开发方式:Mybaits会根据接口自动的创建接口的实现类对象
+        1.namespace必须修改为接口的全类名:com.itheima.mapper.UserMapper
+        2.所有sql语句id值,必须修改为接口中对应方法的名称
+-->
+<mapper namespace="com.itheima.mapper.UserMapper">
+
+    <!--
+        sql片段:sql语句的一部分
+            我们可以把sql语句中的公共部分提取出来,放在一个sql片段中,供所有的sql语句使用
+        id:sql片段的唯一ID
+    -->
+    <sql id="userCols">
+        id,user_name,PASSWORD,NAME,age,sex,birthday,created,updated
+    </sql>
+
+    <!--
+        创建resultMap
+            id:resultMap的唯一标识,不能重复
+            type:查询的结果对应的数据类型 User
+            autoMapping="true": 开启自动映射,类中的成员变量和数据库表中字段名称一样,会自动建立映射关系
+                   类中的字段:password  表中的列:password
+    -->
+    <resultMap id="userResultMap" type="User" autoMapping="true">
+        <!--
+            建立类中的id属性和表中id的映射关系
+                property:类中的属性
+                column:表中的列
+        -->
+        <id property="id" column="id"></id>
+        <!--
+            建立普通字段的映射关系 userName  user_name
+                property:类中的属性
+                column:表中的列
+        -->
+        <result property="userName" column="user_name"></result>
+    </resultMap>
+
+    <!--
+        select:里边用于书写查询的sql语句;对应的还有insert,update,delete标签
+            id:sql语句的唯一标识,不能重复
+            parameterType:sql语句需要的参数的类型,可以省略
+            resultType:数据库查询的结果对应数据类型,根据id查询用户信息,返回的就是一个User对象
+    -->
+    <!--<select id="selectUserById" parameterType="Long" resultType="user">-->
+    <select id="selectUserById" parameterType="Long" resultMap="userResultMap">
+        <!--
+            用于书写查询sql语句
+            #{id}就相当于?占位符,当执行sql语句的时候mybatis会为id赋予一个值
+                SELECT * FROM tb_user WHERE id = #{id};
+                SELECT * FROM tb_user WHERE id = #{aaaaaa};
+            ${}
+                SELECT * FROM tb_user WHERE id = ${value};
+         -->
+        SELECT <include refid="userCols"/> FROM tb_user WHERE id = ${id};
+    </select>
+
+    <!--
+        查询所有用户
+        List<User> 方法的返回值类型是一个List集合,resultType写集合中元素类型
+        SELECT *,user_name userName FROM tb_user
+    -->
+    <select id="selectAllUser" resultType="User">
+          SELECT <include refid="userCols"/>d FROM tb_user
+    </select>
+
+    <!--
+        添加用户
+        parameterType:可以省略,mybatis会根据传递的参数自动推算出来参数的类型
+        useGeneratedKeys="true" 设置是否使用生成的主键  true:使用 false:不使用
+        keyProperty="id" 类中的主键
+        keyColumn="id"  表中的主键
+    -->
+    <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO tb_user
+          VALUES(NULL,#{userName},#{password},#{name},#{age},#{sex},NOW(),NOW(),NOW())
+    </insert>
+
+    <!--
+        修改用户
+    -->
+    <!--<update id="updateUser" parameterType="User">
+        UPDATE tb_user SET
+            user_name = #{userName},
+            PASSWORD = #{password},
+            NAME = #{name},
+            age = #{age},
+            sex = #{sex}
+        WHERE id = #{id}
+    </update>-->
+
+    <!--
+        根据id删除用户
+        parameterType:可以省略  java.lang.Long 别名 long/Long
+    -->
+    <delete id="deleteUser" parameterType="Long">
+          DELETE FROM tb_user WHERE id = #{id}
+    </delete>
+
+    <!--
+        根据用户名和密码查询用户
+        SELECT * FROM tb_user WHERE user_name=#{userName} and password = #{password} 报错
+            Parameter 'userName' not found. Available parameters are [arg1, arg0, param1, param2]
+         解决方法:
+            SELECT * FROM tb_user WHERE user_name=#{arg0} and password = #{arg1}
+            SELECT * FROM tb_user WHERE user_name=#{param1} and password = #{param2}
+            SELECT * FROM tb_user WHERE user_name=#{username} and password = #{password}
+
+            SELECT * FROM tb_user WHERE user_name='${username}' and password = '${password}'
+    -->
+    <select id="selectUserByUsernameAndPassoword" resultMap="userResultMap">
+        SELECT <include refid="userCols"/> FROM tb_user WHERE user_name=#{username} and password = #{password}
+    </select>
+
+    <!--
+        需求1：查询所有男性用户，如果输入了姓名，则按照姓名模糊查找；如果没有输入姓名则不管姓名
+        if标签:用于判断
+            属性test值是true,那么就会把标签体,添加到sql语句中
+    -->
+    <select id="selectUserBySexAndName" resultType="User">
+        SELECT * FROM tb_user WHERE sex='1'
+        <if test="name!=null and name.trim()!=''">
+            AND NAME LIKE '%${name}%'
+        </if>
+    </select>
+
+    <!--
+        需求2：查询所有用户，传递参数orderType，如果值为0，按照年龄升序排序，如果为1则按照年龄降序排序，否则按照ID排序
+        choose:用于多个条件判断  switch  if-else if
+            when属性: case  if/else_if
+            otherwise: default  else
+    -->
+    <select id="selectUserBySort" resultType="User">
+        SELECT * FROM tb_user
+        <choose>
+            <when test="orderType==0">
+                ORDER BY age ASC
+            </when>
+            <when test="orderType==1">
+                ORDER BY age DESC
+            </when>
+            <otherwise>
+                ORDER BY id
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--
+        需求3：查询所有用户，如果有姓名不为空，则按照姓名模糊查找；如果年龄也不为空，则还要满足年龄小于指定年龄
+        where:用于检测sql语句,排除sql语句中多于的and,避免出现语法错误
+    -->
+    <select id="selectUserByNameAndAge" resultType="User">
+        SELECT * FROM tb_user
+        <where>
+            <if test="name!=null and name.trim()!=''">
+                AND NAME LIKE '%${name}%'
+            </if>
+            <if test="age!=null">
+                AND age &lt; #{age}
+            </if>
+        </where>
+    </select>
+
+    <!--
+        需求4：修改用户信息，如果某字段为null，则不修改这个字段
+    -->
+    <update id="updateUser" parameterType="User">
+        UPDATE tb_user
+        <set>
+            <if test="userName!=null and userName.trim()!=''">
+               user_name = #{userName},
+            </if>
+            <if test="password!=null and password.trim()!=''">
+                PASSWORD = #{password},
+            </if>
+            <if test="name!=null and name.trim()!=''">
+                NAME = #{name},
+            </if>
+            <if test="age!=null">
+                age = #{age},
+            </if>
+            <if test="sex!=null">
+                sex = #{sex}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--
+        需求5：根据多个ID查询用户
+        foreach:用于遍历
+            collection="ids":要遍历的存储参数的集合
+            item="id": 给集合中的每一个元素起一个变量名
+            separator="," 多个id的分割符号
+    -->
+    <select id="selectUserByIds" resultType="User">
+        SELECT * FROM tb_user WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

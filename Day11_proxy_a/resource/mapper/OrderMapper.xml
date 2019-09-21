@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    namespace:mapper文件的命名空间,唯一,用于区分mapper的xml文件
+    Mybatis使用DAO代理开发方式:Mybaits会根据接口自动的创建接口的实现类对象
+        1.namespace必须修改为接口的全类名:com.itheima.mapper.UserMapper
+        2.所有sql语句id值,必须修改为接口中对应方法的名称
+-->
+<mapper namespace="com.itheima.mapper.UserMapper">
+    <!--
+        select:里边用于书写查询的sql语句;对应的还有insert,update,delete标签
+            id:sql语句的唯一标识,不能重复
+            parameterType:sql语句需要的参数的类型,可以省略
+            resultType:数据库查询的结果对应数据类型,根据id查询用户信息,返回的就是一个User对象
+    -->
+    <select id="selectUserById" parameterType="Long" resultType="user">
+        <!--
+            用于书写查询sql语句
+            #{id}就相当于?占位符,当执行sql语句的时候mybatis会为id赋予一个值
+         -->
+        SELECT * FROM tb_user WHERE id = #{id};
+    </select>
+
+    <!--
+        查询所有用户
+        List<User> 方法的返回值类型是一个List集合,resultType写集合中元素类型
+        SELECT *,user_name userName FROM tb_user
+    -->
+    <select id="selectAllUser" resultType="User">
+        SELECT * FROM tb_user
+    </select>
+
+    <!--
+        添加用户
+        parameterType:可以省略,mybatis会根据传递的参数自动推算出来参数的类型
+    -->
+    <insert id="insertUser" parameterType="User">
+        INSERT INTO tb_user
+        VALUES(NULL,#{userName},#{password},#{name},#{age},#{sex},NOW(),NOW(),NOW())
+    </insert>
+
+    <!--
+        修改用户
+    -->
+    <update id="updateUser" parameterType="User">
+        UPDATE tb_user SET
+        user_name = #{userName},
+        PASSWORD = #{password},
+        NAME = #{name},
+        age = #{age},
+        sex = #{sex}
+        WHERE id = #{id}
+    </update>
+
+    <!--
+        根据id删除用户
+        parameterType:可以省略  java.lang.Long 别名 long/Long
+    -->
+    <delete id="deleteUser" parameterType="Long">
+        DELETE FROM tb_user WHERE id = #{id}
+    </delete>
+</mapper>
