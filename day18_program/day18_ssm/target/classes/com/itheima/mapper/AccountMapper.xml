@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    4个规则:
+    1.namespace 值和接口的完全路径一致
+    2.sql语句的id和接口的方法名称一致
+    3.sql的参数和接口方法的参数类型一致
+    4.sql的返回值类型和接口方法的返回值类型一致
+-->
+<mapper namespace="com.itheima.mapper.AccountMapper">
+    <!--转入
+        参数: parameterType 可以省略,不想省略写map
+        返回值:void
+    -->
+    <update id="transferIn" >
+        update account set money= money + #{money} where name = #{inName}
+    </update>
+
+    <!--转出-->
+    <update id="transferOut" >
+        update account set money= money - #{money} where name = #{outName}
+    </update>
+</mapper>
